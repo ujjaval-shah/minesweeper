@@ -12,6 +12,7 @@ from settings import *
 
 class Mine(JPanel):
     PRESSED_COLOR = (184, 207, 229)
+    FALSE_POSITIVE_COLOR = (255, 160, 160)
 
     INITIAL = 0
     FLAGGED = 1
@@ -54,52 +55,69 @@ class Mine(JPanel):
             if SwingUtilities.isRightMouseButton(mouse_event):
                 self.btn.onRightClick()
     
+    def setState(self, state):
+        if self.state == state:
+            return
+        self.state = state
+        self.updateDisplay()
+    
     def updateDisplay(self):
         if self.state == Mine.INITIAL:
             self.label.setIcon(None)
         elif self.state == Mine.FLAGGED:
             self.label.setIcon(ImageIcon(Mine.WARNING_SIGN_IMAGE))
         elif self.state == Mine.FALSE_POSITIVE:
-            pass
+            self.setBackground(Color(*Mine.FALSE_POSITIVE_COLOR))
         elif self.state == Mine.REVEALED:
             self.setBackground(Color(*Mine.PRESSED_COLOR))
             if 0 < self.data < INF:
                 self.label.setText(str(self.data))
-            elif self.data == INF:
+            elif self.data >= INF:
                 self.label.setIcon(ImageIcon(Mine.MINE_IMAGE))
         elif self.state == Mine.BLAST:
             self.setBackground(Color.RED)
             self.label.setIcon(ImageIcon(Mine.MINE_IMAGE))
 
     def onRightClick(self):
-        if self.state in [Mine.INITIAL, Mine.FLAGGED]:
-            if self.state == Mine.INITIAL:
-                self.state = Mine.FLAGGED
-            elif self.state == Mine.FLAGGED:
-                self.state = Mine.INITIAL
-            self.updateDisplay()
+        if not self.parent_.parent_.isGameEnded():
+            self.parent_.parent_.setState(STARTED)
+            if self.state in [Mine.INITIAL, Mine.FLAGGED]:
+                if self.state == Mine.INITIAL:
+                    self.setState(Mine.FLAGGED)
+                    # increaseFlagCount
+                elif self.state == Mine.FLAGGED:
+                    self.setState(Mine.INITIAL)
+                    # decreaseFlagCount
 
     def onLeftClick(self):
-        if self.state == Mine.INITIAL:
-            if self.data == 0:
-                self.state = Mine.REVEALED
-                self.updateDisplay()
-                self.parent_.bfs(self.id)
-                return
-            
-            if self.data < INF:
-                self.state = Mine.REVEALED
-            else:
-                self.state = Mine.BLAST
-            self.updateDisplay()
+        if not self.parent_.parent_.isGameEnded():
+            self.parent_.parent_.setState(STARTED)
+            if self.state == Mine.INITIAL:
+                if self.data == 0:
+                    self.setState(Mine.REVEALED)
+                    self.parent_.bfs(self.id)
+                    self.parent_.checkIfIsAVictory()
+                    return
+                
+                if self.data < INF:
+                    self.setState(Mine.REVEALED)
+                    self.parent_.checkIfIsAVictory()
+                else:
+                    self.setState(Mine.BLAST)
+                    self.parent_.parent_.setState(GAME_OVER)
     
     def bfsClick(self):
         if self.state != Mine.REVEALED:
-            self.state = Mine.REVEALED
-            self.updateDisplay()
+            self.setState(Mine.REVEALED)
     
-    def gameOver(self):
-        pass
+    def onVictory(self):
+        if self.state == Mine.INITIAL:
+            self.setState(Mine.FLAGGED)
     
-    def __str__(self):
-        return "Mine: " + str(self.id)
+    def onGameOver(self):
+        if self.state == Mine.FLAGGED:
+            if self.data < INF:
+                self.setState(Mine.FALSE_POSITIVE)
+        if self.state == Mine.INITIAL:
+            if self.data >= INF:
+                self.setState(Mine.REVEALED)

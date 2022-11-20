@@ -20,8 +20,10 @@ from settings import *
 
 class Mines(JPanel):
     
-    def __init__(self):
+    def __init__(self, game):
         super(JPanel, self).__init__()
+        self.parent_ = game
+
         self.setLayout(GridLayout(GRID_SIZE, GRID_SIZE))
         self.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN))
 
@@ -65,9 +67,6 @@ class Mines(JPanel):
             for ncell in neighbours:
                 if self.is_valid(ncell):
                     self.cells[ncell[0]][ncell[1]] += 1
-        
-        for row in self.cells:
-            print(row)
     
     def bfs(self, id):
         root = (id // GRID_SIZE, id % GRID_SIZE)
@@ -92,13 +91,30 @@ class Mines(JPanel):
                 for ncell in neighbours:
                     if self.is_valid(ncell) and ncell not in visited:
                         if self.cells[ncell[0]][ncell[1]] == 0:
-                            # self.buttons[ncell[0]][ncell[1]].bfsClick()
                             Thread(target=self.buttons[ncell[0]][ncell[1]].bfsClick).start()
                             visited.add(ncell)
                             nq.append(ncell)
                         elif self.cells[ncell[0]][ncell[1]] < INF:
-                            # self.buttons[ncell[0]][ncell[1]].bfsClick()
                             Thread(target=self.buttons[ncell[0]][ncell[1]].bfsClick).start()
                             visited.add(ncell)
                 
                 q = nq
+        return
+    
+    def checkIfIsAVictory(self):
+        non_revealed_cells_count = 0
+        for row in self.buttons:
+            for btn in row:
+                non_revealed_cells_count += (btn.state != Mine.REVEALED)
+        if non_revealed_cells_count == TOTAL_MINES:
+            self.parent_.setState(VICTORY)
+    
+    def onVictory(self):
+        for row in self.buttons:
+            for btn in row:
+                Thread(target=btn.onVictory).start()
+    
+    def onGameOver(self):
+        for row in self.buttons:
+            for btn in row:
+                Thread(target=btn.onGameOver).start()

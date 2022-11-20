@@ -1,28 +1,40 @@
 import os
 from javax.swing import (
-    JToggleButton, ImageIcon, SwingUtilities,
+    BorderFactory, JPanel, JLabel, ImageIcon, SwingUtilities,
 )
 from java.awt import (
-    Color, Font, Insets,
+    Color, Font,
 )
 from java.awt.event import MouseListener
 from settings import *
 
 
 
-class Mine(JToggleButton):
+class Mine(JPanel):
+    PRESSED_COLOR = (184, 207, 229)
+
+    INITIAL = 0
+    FLAGGED = 1
+    FALSE_POSITIVE = 2
+    REVEALED = 3
+    BLAST = 4
+
+    WARNING_SIGN_IMAGE = os.path.join(os.getcwd(), 'assets', 'warning-sign.png')
+    MINE_IMAGE = os.path.join(os.getcwd(), 'assets', 'mine.png')
 
     def __init__(self, id, data, mines):
-        super(JToggleButton, self).__init__()
+        super(JPanel, self).__init__()
         self.id = id
         self.data = data
+        self.state = Mine.INITIAL
         self.flagged = False
         self.pressed = False
         self.parent_ = mines
+        self.label = JLabel()
         self.setBackground(Color.WHITE)
-        self.setMargin(Insets(0,0,0,0))
-        self.setFocusPainted(False)
-        self.setFont(Font("Arial", Font.BOLD, 30))
+        self.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1))
+        self.label.setFont(Font("Arial", Font.BOLD, 30))
+        self.add(self.label)
         self.addMouseListener(self.MineActionListener(self))
 
     class MineActionListener(MouseListener):
@@ -42,44 +54,49 @@ class Mine(JToggleButton):
             if SwingUtilities.isRightMouseButton(mouse_event):
                 self.btn.onRightClick()
     
+    def updateDisplay(self):
+        if self.state == Mine.INITIAL:
+            self.label.setIcon(None)
+        elif self.state == Mine.FLAGGED:
+            self.label.setIcon(ImageIcon(Mine.WARNING_SIGN_IMAGE))
+        elif self.state == Mine.FALSE_POSITIVE:
+            pass
+        elif self.state == Mine.REVEALED:
+            self.setBackground(Color(*Mine.PRESSED_COLOR))
+            if 0 < self.data < INF:
+                self.label.setText(str(self.data))
+            elif self.data == INF:
+                self.label.setIcon(ImageIcon(Mine.MINE_IMAGE))
+        elif self.state == Mine.BLAST:
+            self.setBackground(Color.RED)
+            self.label.setIcon(ImageIcon(Mine.MINE_IMAGE))
+
     def onRightClick(self):
-        if not self.pressed:
-            if not self.flagged:
-                self.flagged = True
-                img = os.path.join(os.getcwd(), 'assets', 'warning-sign.png')
-                self.setIcon(ImageIcon(img))
-            else:
-                self.flagged = False
-                self.setIcon(None)
+        if self.state in [Mine.INITIAL, Mine.FLAGGED]:
+            if self.state == Mine.INITIAL:
+                self.state = Mine.FLAGGED
+            elif self.state == Mine.FLAGGED:
+                self.state = Mine.INITIAL
+            self.updateDisplay()
 
     def onLeftClick(self):
-        if self.flagged or self.pressed:
-            # Nullify the toggle effect
-            # by clicking the button Twice
-            self.doClick()
-            return
-
-        if self.data == 0:
-            self.parent_.bfs(self.id)
-            pass
-        elif self.data < INF:
-            self.setText(str(self.data))
-        else:
-            # GAME OVER
-            img = os.path.join(os.getcwd(), 'assets', 'mine.png')
-            self.setIcon(ImageIcon(img))
-        self.pressed = True
+        if self.state == Mine.INITIAL:
+            if self.data == 0:
+                self.state = Mine.REVEALED
+                self.updateDisplay()
+                self.parent_.bfs(self.id)
+                return
+            
+            if self.data < INF:
+                self.state = Mine.REVEALED
+            else:
+                self.state = Mine.BLAST
+            self.updateDisplay()
     
     def bfsClick(self):
-        if not self.pressed:
-            if self.flagged:
-                self.onRightClick()
-            # always called by parent component
-            # during epmpty area bfs
-            if 0 < self.data < INF:
-                self.setText(str(self.data))
-            self.pressed = True
-            self.doClick()
+        if self.state != Mine.REVEALED:
+            self.state = Mine.REVEALED
+            self.updateDisplay()
     
     def gameOver(self):
         pass

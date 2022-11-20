@@ -1,4 +1,5 @@
 from collections import deque
+from threading import Thread
 import random
 from javax.swing import (
     JFrame, JPanel, 
@@ -91,11 +92,13 @@ class Mines(JPanel):
                 for ncell in neighbours:
                     if self.is_valid(ncell) and ncell not in visited:
                         if self.cells[ncell[0]][ncell[1]] == 0:
-                            self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            # self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            Thread(target=self.buttons[ncell[0]][ncell[1]].bfsClick).start()
                             visited.add(ncell)
                             nq.append(ncell)
                         elif self.cells[ncell[0]][ncell[1]] < INF:
-                            self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            # self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            Thread(target=self.buttons[ncell[0]][ncell[1]].bfsClick).start()
                             visited.add(ncell)
                 
                 q = nq

@@ -1,3 +1,4 @@
+from collections import deque
 import random
 from javax.swing import (
     JFrame, JPanel, 
@@ -24,7 +25,7 @@ class Mines(JPanel):
         self.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN))
 
         self.arrangeMines()
-        self.buttons = [[Mine(i*GRID_SIZE+j, self.cells[i][j]) for j in range(GRID_SIZE)] for i in range(GRID_SIZE)]
+        self.buttons = [[Mine(i*GRID_SIZE+j, self.cells[i][j], self) for j in range(GRID_SIZE)] for i in range(GRID_SIZE)]
 
         for i in range(GRID_SIZE):
             for j in range(GRID_SIZE):
@@ -66,3 +67,35 @@ class Mines(JPanel):
         
         for row in self.cells:
             print(row)
+    
+    def bfs(self, id):
+        root = (id // GRID_SIZE, id % GRID_SIZE)
+        q = deque([root])
+        visited = set([root])
+
+        while q:
+            nq = deque()
+            for cell in q:
+
+                neighbours = [
+                    (cell[0]-1, cell[1]-1),
+                    (cell[0]-1, cell[1]),
+                    (cell[0]-1, cell[1]+1),
+                    (cell[0], cell[1]-1),
+                    (cell[0], cell[1]+1),
+                    (cell[0]+1, cell[1]-1),
+                    (cell[0]+1, cell[1]),
+                    (cell[0]+1, cell[1]+1),
+                ]
+
+                for ncell in neighbours:
+                    if self.is_valid(ncell) and ncell not in visited:
+                        if self.cells[ncell[0]][ncell[1]] == 0:
+                            self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            visited.add(ncell)
+                            nq.append(ncell)
+                        elif self.cells[ncell[0]][ncell[1]] < INF:
+                            self.buttons[ncell[0]][ncell[1]].bfsClick()
+                            visited.add(ncell)
+                
+                q = nq

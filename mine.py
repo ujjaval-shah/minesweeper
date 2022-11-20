@@ -12,12 +12,13 @@ from settings import *
 
 class Mine(JToggleButton):
 
-    def __init__(self, id, data):
+    def __init__(self, id, data, mines):
         super(JToggleButton, self).__init__()
         self.id = id
         self.data = data
         self.flagged = False
         self.pressed = False
+        self.parent_ = mines
         self.setBackground(Color.WHITE)
         self.setMargin(Insets(0,0,0,0))
         self.setFocusPainted(False)
@@ -52,21 +53,36 @@ class Mine(JToggleButton):
                 self.setIcon(None)
 
     def onLeftClick(self):
-        if not self.pressed and not self.flagged:
-            if self.data == 0:
-                # BFS
-                pass
-            elif self.data < INF:
-                self.setText(str(self.data))
-            else:
-                # GAME OVER
-                img = os.path.join(os.getcwd(), 'assets', 'mine.png')
-                self.setIcon(ImageIcon(img))
-            self.pressed = True
-        else:
+        if self.flagged or self.pressed:
             # Nullify the toggle effect
             # by clicking the button Twice
             self.doClick()
+            return
+
+        if self.data == 0:
+            self.parent_.bfs(self.id)
+            pass
+        elif self.data < INF:
+            self.setText(str(self.data))
+        else:
+            # GAME OVER
+            img = os.path.join(os.getcwd(), 'assets', 'mine.png')
+            self.setIcon(ImageIcon(img))
+        self.pressed = True
+    
+    def bfsClick(self):
+        if not self.pressed:
+            if self.flagged:
+                self.onRightClick()
+            # always called by parent component
+            # during epmpty area bfs
+            if 0 < self.data < INF:
+                self.setText(str(self.data))
+            self.pressed = True
+            self.doClick()
+    
+    def gameOver(self):
+        pass
     
     def __str__(self):
         return "Mine: " + str(self.id)

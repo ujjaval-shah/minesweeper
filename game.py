@@ -19,10 +19,10 @@ class TopbarWrapper(JPanel):
     def __init__(self):
         super(JPanel, self).__init__()
         self.setLayout(BorderLayout())
-        self.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN))
+        self.setBorder(BorderFactory.createEmptyBorder(*MARGIN))
 
     def getPreferredSize(self):
-        return Dimension(LENGTH, 100)
+        return Dimension(LENGTH, TOPBAR_HEIGHT)
 
 
 class TextDisplayWrapper(JPanel):
@@ -89,7 +89,7 @@ class Game:
         
         self.restartBtn.setIcon(ImageIcon(Game.INITIAL_IMAGE))
         self.restartBtn.setFocusPainted(False)
-        self.restartBtn.setPreferredSize(Dimension(78, 78))
+        self.restartBtn.setPreferredSize(Dimension(*RESTART_BTN_DIMENSIONS))
         self.restartBtn.setBackground(Color.WHITE)
         self.restartBtn.addActionListener(restartBtnListener(self))
         restart_wrap.add(self.restartBtn)
@@ -162,7 +162,7 @@ class Game:
         self.setState(YET_TO_START)
     
     def startTimer(self):
-        self.timer = Timer(1000, TimerListener(self)) # CONSTANT
+        self.timer = Timer(ONE_SECOND, TimerListener(self))
         self.timer.start()
     
     def stopTimer(self):
@@ -179,11 +179,11 @@ class Game:
         self.updateTimeField(self.time_taken)
     
     def updateTimeField(self, time_seconds):
-        time_seconds = min(time_seconds, 999) # LIMIT
+        time_seconds = min(time_seconds, TIMER_FIELD_LIMIT)
         text = str(time_seconds)
         self.time_field.setText((3 - len(text))*'0' + text)
 
     def updateMinesField(self, remaining_mines):
-        remaining_mines = max(remaining_mines, -99) # LIMIT
+        remaining_mines = max(remaining_mines, MINES_FIELD_LIMIT)
         text = str(remaining_mines)
         self.mines_field.setText((3 - len(text))*'0' + text)

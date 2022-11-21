@@ -1,10 +1,6 @@
 import os
-from javax.swing import (
-    BorderFactory, JPanel, JLabel, ImageIcon, SwingUtilities,
-)
-from java.awt import (
-    Color, Font,
-)
+from javax.swing import BorderFactory, JPanel, JLabel, ImageIcon, SwingUtilities
+from java.awt import Color, Font
 from java.awt.event import MouseListener
 from settings import *
 
@@ -72,6 +68,7 @@ class Mine(JPanel):
             self.setBackground(Color(*Mine.PRESSED_COLOR))
             self.label.setIcon(None)
             if 0 < self.data < INF:
+                self.label.setForeground(CELL_TEXT_COLOR[self.data])
                 self.label.setText(str(self.data))
             elif self.data >= INF:
                 self.label.setIcon(ImageIcon(Mine.MINE_IMAGE))

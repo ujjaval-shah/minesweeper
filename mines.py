@@ -1,18 +1,8 @@
 from collections import deque
 from threading import Thread
 import random
-from javax.swing import (
-    JFrame, JPanel, 
-    JButton, JToggleButton, BorderFactory,
-    ImageIcon, Box, BoxLayout,
-    SwingUtilities,
-)
-from java.awt import (
-    GridLayout, BorderLayout, FlowLayout,
-    Label, Image, Dimension, Color, Font, Insets,
-    Component,
-)
-from java.awt.event import MouseListener
+from javax.swing import JPanel, BorderFactory
+from java.awt import GridLayout, Dimension
 from mine import Mine
 from settings import *
 
@@ -26,7 +16,7 @@ class Mines(JPanel):
         self.total_flags = 0
 
         self.setLayout(GridLayout(GRID_SIZE, GRID_SIZE))
-        self.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN))
+        self.setBorder(BorderFactory.createEmptyBorder(*MARGIN))
 
         self.arrangeMines()
         self.buttons = [[Mine(i*GRID_SIZE+j, self.cells[i][j], self) for j in range(GRID_SIZE)] for i in range(GRID_SIZE)]

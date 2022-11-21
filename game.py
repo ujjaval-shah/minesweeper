@@ -1,16 +1,15 @@
 import os
 from javax.swing import (
-    JFrame, JPanel, 
-    JButton, JToggleButton, BorderFactory,
-    ImageIcon, Box, BoxLayout,
-    SwingUtilities,
+    JFrame, JPanel, JTextField,
+    JButton, BorderFactory, ImageIcon,
+    Timer,
 )
 from java.awt import (
-    GridLayout, BorderLayout, FlowLayout,
-    Label, Image, Dimension, Color, Font, Insets,
-    Component,
+    BorderLayout, Dimension, 
+    Color, Font, Insets,
 )
 from java.awt.event import ActionListener
+from java.io import File
 from mines import Mines
 from settings import *
 
@@ -26,13 +25,46 @@ class TopbarWrapper(JPanel):
         return Dimension(LENGTH, 100)
 
 
+class TextDisplayWrapper(JPanel):
+    margin = (2, 2, 2, 2)
+
+    def __init__(self, child, where):
+        super(JPanel, self).__init__()
+        self.setLayout(BorderLayout())
+        self.setBorder(BorderFactory.createEmptyBorder(*TextDisplayWrapper.margin))
+        self.add(child, where)
+
+
+class TimerListener(ActionListener):
+    
+    def __init__(self, game):
+        super(ActionListener, self).__init__()
+        self.game = game
+    
+    def actionPerformed(self, e):
+        self.game.incrementTimeField()
+
+
+class restartBtnListener(ActionListener):
+    
+    def __init__(self, game):
+        super(ActionListener, self).__init__()
+        self.game = game
+
+    def actionPerformed(self, e):
+        self.game.restart()
+
+
 class Game:
     INITIAL_IMAGE = os.path.join(os.getcwd(), 'assets', 'slightly-smiling-face.png')
     VICTORY_IMAGE = os.path.join(os.getcwd(), 'assets', 'smiling-face-with-sunglasses.png')
     GAME_OVER_IMAGE = os.path.join(os.getcwd(), 'assets', 'face-with-head-bandage.png')
+    TEXTFIELD_FONT_FILE = File(os.path.join(os.getcwd(), 'assets', 'Digital7Mono.ttf'))
+    TEXTFIELD_FONT = Font.createFont(Font.TRUETYPE_FONT, TEXTFIELD_FONT_FILE).deriveFont(80.0)
 
     def __init__(self):
         self.state = YET_TO_START
+        self.time_taken = 0
 
         self.frame = JFrame("Minesweeper")
         self.frame.setResizable(False)
@@ -42,8 +74,14 @@ class Game:
 
         topbar = TopbarWrapper()
         
-        topbar.add(Label("MINES LEFT"), BorderLayout.WEST)
+        # Mines count field
+        self.mines_field = JTextField("000")
+        self.mines_field.setEditable(False)
+        self.mines_field.setBackground(Color.WHITE)
+        self.mines_field.setFont(Game.TEXTFIELD_FONT)
+        topbar.add(TextDisplayWrapper(self.mines_field, BorderLayout.WEST), BorderLayout.WEST)
 
+        # Smiley Button
         self.restartBtn = JButton()
         
         restart_wrap = JPanel()
@@ -51,34 +89,29 @@ class Game:
         
         self.restartBtn.setIcon(ImageIcon(Game.INITIAL_IMAGE))
         self.restartBtn.setFocusPainted(False)
-        self.restartBtn.setPreferredSize(Dimension(60, 60))
+        self.restartBtn.setPreferredSize(Dimension(78, 78))
         self.restartBtn.setBackground(Color.WHITE)
-        self.restartBtn.addActionListener(Game.restartBtnActionListener(self))
+        self.restartBtn.addActionListener(restartBtnListener(self))
         restart_wrap.add(self.restartBtn)
 
         topbar.add(restart_wrap, BorderLayout.CENTER)
 
-        topbar.add(Label("TIME TAKEN"), BorderLayout.EAST)
+        # timer display field
+        self.time_field = JTextField("000")
+        self.time_field.setEditable(False)
+        self.time_field.setBackground(Color.WHITE)
+        self.time_field.setFont(Game.TEXTFIELD_FONT)
+        topbar.add(TextDisplayWrapper(self.time_field, BorderLayout.EAST), BorderLayout.EAST)
 
         self.frame.getContentPane().add(topbar, BorderLayout.NORTH)
 
-
+        # grid
         self.grid = Mines(self)
         self.frame.getContentPane().add(self.grid, BorderLayout.CENTER)
 
         
         self.frame.pack()
         self.frame.setVisible(True)
-    
-    class restartBtnActionListener(ActionListener):
-        
-        def __init__(self, game):
-            super(ActionListener, self).__init__()
-            self.game = game
-
-        def actionPerformed(self, e):
-            self.game.restart()
-
     
     def isGameEnded(self):
         return self.state == VICTORY or self.state == GAME_OVER
@@ -98,19 +131,27 @@ class Game:
             self.frame.getContentPane().add(self.grid, BorderLayout.CENTER)
             self.frame.revalidate()
             self.frame.pack()
-            print "two textbox reset"
+            # print "timer field reset"
+            self.resetTimeField()
+            # print "mines field reset"
+            self.updateMinesField(TOTAL_MINES)
             # print "restart button icon updated"
             self.restartBtn.setIcon(ImageIcon(Game.INITIAL_IMAGE))
         elif self.state == STARTED:
-            print "timer started"
+            # print "timer started"
+            self.startTimer()
         elif self.state == VICTORY:
-            print "timer stopped"
+            # print "timer stopped"
+            self.stopTimer()
+            # print "mines filed 0"
+            self.updateMinesField(0)
             # print "flag remaining mines"
             self.grid.onVictory()
             # print "restart button icon updated"
             self.restartBtn.setIcon(ImageIcon(Game.VICTORY_IMAGE))
         elif self.state == GAME_OVER:
-            print "timer stopped"
+            # print "timer stopped"
+            self.stopTimer()
             # print "reveal all mines"
             # print "falsely flagged cells color"
             self.grid.onGameOver()
@@ -119,3 +160,30 @@ class Game:
     
     def restart(self):
         self.setState(YET_TO_START)
+    
+    def startTimer(self):
+        self.timer = Timer(1000, TimerListener(self)) # CONSTANT
+        self.timer.start()
+    
+    def stopTimer(self):
+        self.timer.stop()
+
+    def resetTimeField(self):
+        if self.timer:
+            self.timer.stop()
+        self.time_taken = 0
+        self.updateTimeField(self.time_taken)
+    
+    def incrementTimeField(self):
+        self.time_taken += 1
+        self.updateTimeField(self.time_taken)
+    
+    def updateTimeField(self, time_seconds):
+        time_seconds = min(time_seconds, 999) # LIMIT
+        text = str(time_seconds)
+        self.time_field.setText((3 - len(text))*'0' + text)
+
+    def updateMinesField(self, remaining_mines):
+        remaining_mines = max(remaining_mines, -99) # LIMIT
+        text = str(remaining_mines)
+        self.mines_field.setText((3 - len(text))*'0' + text)

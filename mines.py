@@ -23,6 +23,7 @@ class Mines(JPanel):
     def __init__(self, game):
         super(JPanel, self).__init__()
         self.parent_ = game
+        self.total_flags = 0
 
         self.setLayout(GridLayout(GRID_SIZE, GRID_SIZE))
         self.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN))
@@ -67,6 +68,11 @@ class Mines(JPanel):
             for ncell in neighbours:
                 if self.is_valid(ncell):
                     self.cells[ncell[0]][ncell[1]] += 1
+        
+        # DEBUG
+        print("\n")
+        for row in self.cells:
+            print(row)
     
     def bfs(self, id):
         root = (id // GRID_SIZE, id % GRID_SIZE)
@@ -90,6 +96,8 @@ class Mines(JPanel):
 
                 for ncell in neighbours:
                     if self.is_valid(ncell) and ncell not in visited:
+                        if self.buttons[ncell[0]][ncell[1]].state == Mine.FLAGGED:
+                            self.decreaseFlagCount()
                         if self.cells[ncell[0]][ncell[1]] == 0:
                             Thread(target=self.buttons[ncell[0]][ncell[1]].bfsClick).start()
                             visited.add(ncell)
@@ -101,6 +109,16 @@ class Mines(JPanel):
                 q = nq
         return
     
+    def increaseFlagCount(self):
+        self.total_flags += 1
+        remaining_mines = TOTAL_MINES - self.total_flags
+        self.parent_.updateMinesField(remaining_mines)
+    
+    def decreaseFlagCount(self):
+        self.total_flags -= 1
+        remaining_mines = TOTAL_MINES - self.total_flags
+        self.parent_.updateMinesField(remaining_mines)
+
     def checkIfIsAVictory(self):
         non_revealed_cells_count = 0
         for row in self.buttons:

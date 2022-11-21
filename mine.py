@@ -20,7 +20,7 @@ class Mine(JPanel):
     REVEALED = 3
     BLAST = 4
 
-    WARNING_SIGN_IMAGE = os.path.join(os.getcwd(), 'assets', 'warning-sign.png')
+    FLAG_IMAGE = os.path.join(os.getcwd(), 'assets', 'red-flag.png')
     MINE_IMAGE = os.path.join(os.getcwd(), 'assets', 'mine.png')
 
     def __init__(self, id, data, mines):
@@ -65,11 +65,12 @@ class Mine(JPanel):
         if self.state == Mine.INITIAL:
             self.label.setIcon(None)
         elif self.state == Mine.FLAGGED:
-            self.label.setIcon(ImageIcon(Mine.WARNING_SIGN_IMAGE))
+            self.label.setIcon(ImageIcon(Mine.FLAG_IMAGE))
         elif self.state == Mine.FALSE_POSITIVE:
             self.setBackground(Color(*Mine.FALSE_POSITIVE_COLOR))
         elif self.state == Mine.REVEALED:
             self.setBackground(Color(*Mine.PRESSED_COLOR))
+            self.label.setIcon(None)
             if 0 < self.data < INF:
                 self.label.setText(str(self.data))
             elif self.data >= INF:
@@ -84,10 +85,10 @@ class Mine(JPanel):
             if self.state in [Mine.INITIAL, Mine.FLAGGED]:
                 if self.state == Mine.INITIAL:
                     self.setState(Mine.FLAGGED)
-                    # increaseFlagCount
+                    self.parent_.increaseFlagCount()
                 elif self.state == Mine.FLAGGED:
                     self.setState(Mine.INITIAL)
-                    # decreaseFlagCount
+                    self.parent_.decreaseFlagCount()
 
     def onLeftClick(self):
         if not self.parent_.parent_.isGameEnded():
